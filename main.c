@@ -4,142 +4,163 @@
 #include <unistd.h>
 #include <time.h>
 #include <mpi.h>
-#include <json-c/json.h>
 
-#define MAX_LINE_LENGTH 50
-#define MAX_LINES 10
+#define TAMANHO_MSG 100
+#define ROOT 0
+#define TAG 0
 
-typedef struct 
-{
-    char lines[MAX_LINES][MAX_LINE_LENGTH];
-} CHAR_ARRAY;
+// Operacoes
+#define OP_NADA 0
+// Envio de mensagem
+#define OP_ENVIAR_MSG 1                 // > solicitação para enviar mensagem [para:aux]
+#define OP_ENVIAR_MSG_CONCEDIDA 2       // < solicitação para envio mensagem CONCEDIDA (enviar ponto a ponto)
+#define OP_RECEBER_MSG 3                // < receber msg do [processo:aux] (ponto a ponto)
+// Edição de linha
+#define OP_EDITAR_LINHA 4               // > solicitação editar [linha:aux]
+#define OP_EDITAR_LINHA_CONCEDIDA 5     // < solicitação para editar linha CONCEDIDA
+#define OP_EDITAR_LINHA_NEGADA 6        // < solicitação para editar linha NEGADA
 
-void generateSettingsFile(int size) {
-    FILE *file;
-    file = fopen("data/file.json", "w");
-    fputs("{\"lines\": [\"Linha1\"]}", file);
-    fclose(file);
 
-    file = fopen("data/settings.txt", "w");
+struct Comunicacao{
+    int op;
+    int aux;
+    char msg[TAMANHO_MSG];
+};
 
-    char sizeC[2];
-    sprintf(sizeC, "%d", size-1);
+char * getMsg() {
+    int r = rand() % 8;
 
-    char users[10] = "users|";
-    strcat(users, sizeC);
+    switch (r) {
+        case 1:
+            return "Gostaria de dizer que te acho legal demais.";
+        case 2: 
+            return "Vamos sair para beber a noite?";
+        case 3:
+            return "O chefe é um mala.";
+        case 4: 
+            return "Obrigado por me auxiliar.";
+        case 5:
+            return "Vamos conversar?";
+        case 6: 
+            return "Vishhhh fiz uma cagada.";
+        case 7:
+            return "Sabia que o joão caiu no chão.";
+        case 8: 
+            return "UUUUUUUUUuaaaaaahhhhh, yeah!.";
+        default:
+            return "Eita nóis";
 
-    fputs(users, file);
-    fclose(file);
+    }   
 }
 
-void generateUserFile(int userId) {
-    char filename[18] = "data/user";
-    char intC[2];
-    sprintf(intC, "%d", userId);
-    strcat(filename, intC);
-    strcat(filename, ".txt");
-
-    FILE *file;
-    file = fopen(filename, "w");
-    fclose(file);
+void enviarOpNada(int para) {
+    struct Comunicacao _env;
+    _env.op = OP_NADA;
+    MPI_Send(&_env,sizeof(struct Comunicacao),MPI_CHAR, para ,TAG,MPI_COMM_WORLD);
 }
 
-int get_file_contents(const char *filename, char **outbuffer) {
-    FILE *file = NULL;
-    long filesize;
-    const int blocksize = 1;
-    size_t readsize;
-    char *filebuffer;
+// ---------------------------------------------------
+// OPERAÇÕES ROOT
 
-    // Open the file
-    file = fopen(filename, "r");
-    if (NULL == file)
-    {
-        printf("'%s' not opened\n", filename);
-        exit(EXIT_FAILURE);
-    }
+void solicitacaoEnvioMsg(int de, int para) {
+    struct Comunicacao _env1;
+    _env1.op = OP_RECEBER_MSG;
+    _env1.aux = de;
+    MPI_Send(&_env1,sizeof(struct Comunicacao),MPI_CHAR, para ,TAG,MPI_COMM_WORLD);
 
-    // Determine the file size
-    fseek(file, 0, SEEK_END);
-    filesize = ftell(file);
-    rewind(file);
-
-    // Allocate memory for the file contents
-    filebuffer = (char *)malloc(sizeof(char) * filesize);
-    *outbuffer = filebuffer;
-    if (filebuffer == NULL)
-    {
-        fputs("malloc out-of-memory", stderr);
-        exit(EXIT_FAILURE);
-    }
-
-    // Read in the file
-    readsize = fread(filebuffer, blocksize, filesize, file);
-    if (readsize != filesize)
-    {
-        fputs("didn't read file completely", stderr);
-        exit(EXIT_FAILURE);
-    }
-
-    // Clean exit
-    fclose(file);
-    return EXIT_SUCCESS;
-}
-
-void getFileContent() {
-
-    char *filename = "data/file.json";
-    char *buffer = NULL;
-
-    get_file_contents(filename, &buffer);
-
-    struct json_object *parsed_json;
-    struct json_object *dados;
+    struct Comunicacao _env2;
+    _env2.op = OP_ENVIAR_MSG_CONCEDIDA;
+    MPI_Send(&_env2,sizeof(struct Comunicacao),MPI_CHAR, de ,TAG,MPI_COMM_WORLD);
     
-    size_t n_dados;
-    size_t i;
+}
 
-    parsed_json = json_tokener_parse(buffer);
+// ---------------------------------------------------
+// ---------------------------------------------------
+// OPERAÇÕES PROCESSOS
 
-    json_object_object_get_ex(parsed_json, "lines", &dados);
-    int n_lines = json_object_array_length(dados);
+void enviarMsg(int processoAtual, int para, char * msg, MPI_Status status) {
+    struct Comunicacao _env;
+    _env.op = OP_ENVIAR_MSG;
+    _env.aux = para;
+    MPI_Send(&_env,sizeof(struct Comunicacao),MPI_CHAR,ROOT,TAG,MPI_COMM_WORLD);
 
-    for (i = 0; i < n_lines; i++) {
-        const char *dado = json_object_to_json_string(json_object_array_get_idx(dados, i));
-        printf("%ld %s\n",i+1,  dado);
+    struct Comunicacao _recEnvioMsg;
+    MPI_Recv(&_recEnvioMsg,sizeof(struct Comunicacao), MPI_CHAR, ROOT, TAG, MPI_COMM_WORLD, &status);  
+
+    if (_recEnvioMsg.op == OP_ENVIAR_MSG_CONCEDIDA) {
+        struct Comunicacao _envMsg;
+        strncpy(_envMsg.msg, msg, TAMANHO_MSG-1);
+        MPI_Send(&_envMsg,sizeof(struct Comunicacao),MPI_CHAR, _env.aux, TAG,MPI_COMM_WORLD);
     }
 }
+
+void receberMsg(int processoAtual, int de, MPI_Status status) {
+    struct Comunicacao _recMsg;
+    MPI_Recv(&_recMsg,sizeof(struct Comunicacao), MPI_CHAR, de, TAG, MPI_COMM_WORLD, &status);
+    printf("[%d] Mensagem de %d: %s\n", processoAtual, de, _recMsg.msg);
+}
+
+// ---------------------------------------------------
+// ---------------------------------------------------
 
 int main(int argc, char **argv)
 {
-    int rank, size; 
-    int root = 0; //quem vai distribuir os dados
+    int rank, size;
+
+    srand(time(NULL));
+
+    MPI_Status status;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    int settingsOk = 0;
+    int step = 0;
     
     for (;;) {
-        
-        if (settingsOk == 0) {
-            if (rank == root) {
-                generateSettingsFile(size);
-                settingsOk = 1;
+        printf("[%d] step %d\n", rank, step);
+        if (rank != ROOT) {
 
-                printf("Generate settings files\n");
+            if (rank == 1 && step == 2) {
+                
+                enviarMsg(rank, 2, getMsg(), status);
 
-                getFileContent();
             } else {
-                generateUserFile(rank);
-                settingsOk = 1;
-
-                printf("Generate userFile %d\n", rank);
+                enviarOpNada(ROOT);
             }
-        } 
+            
+
+            struct Comunicacao _rec;
+            MPI_Recv(&_rec,sizeof(struct Comunicacao), MPI_CHAR, ROOT, TAG, MPI_COMM_WORLD, &status);
+
+            // PROCESSO DEVE RECEBER MENSAGEM DE OUTRO PROCESSO
+            if (_rec.op == OP_RECEBER_MSG) {
+                receberMsg(rank, _rec.aux, status);
+            }
+        }   
+
+        if (rank == ROOT) {
+            int i;
+
+            for (i=1; i<size; i++) {
+                struct Comunicacao _rec;
+                MPI_Recv(&_rec,sizeof(struct Comunicacao), MPI_CHAR, i, TAG, MPI_COMM_WORLD, &status);
+
+                if (_rec.op != OP_NADA) {
+
+                    // PROCESSO DESEJA ENVIAR MSG PARA OUTRO PROCESSO
+                    if (_rec.op == OP_ENVIAR_MSG) {
+                        solicitacaoEnvioMsg(i, _rec.aux);
+                    }
+                }
+
+                enviarOpNada(i);
+            }
+        }     
         
-        sleep(0.5);
+        sleep(2);
+
+        step++;
     }
 
 
