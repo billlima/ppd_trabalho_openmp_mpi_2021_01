@@ -61,7 +61,6 @@ void enviarOpNada(int para) {
 
 // ---------------------------------------------------
 // OPERAÇÕES ROOT
-
 void solicitacaoEnvioMsg(int de, int para) {
     struct Comunicacao _env1;
     _env1.op = OP_RECEBER_MSG;
@@ -73,11 +72,10 @@ void solicitacaoEnvioMsg(int de, int para) {
     MPI_Send(&_env2,sizeof(struct Comunicacao),MPI_CHAR, de ,TAG,MPI_COMM_WORLD);
     
 }
-
 // ---------------------------------------------------
+
 // ---------------------------------------------------
 // OPERAÇÕES PROCESSOS
-
 void enviarMsg(int processoAtual, int para, char * msg, MPI_Status status) {
     struct Comunicacao _env;
     _env.op = OP_ENVIAR_MSG;
@@ -99,7 +97,6 @@ void receberMsg(int processoAtual, int de, MPI_Status status) {
     MPI_Recv(&_recMsg,sizeof(struct Comunicacao), MPI_CHAR, de, TAG, MPI_COMM_WORLD, &status);
     printf("[%d] Mensagem de %d: %s\n", processoAtual, de, _recMsg.msg);
 }
-
 // ---------------------------------------------------
 // ---------------------------------------------------
 
