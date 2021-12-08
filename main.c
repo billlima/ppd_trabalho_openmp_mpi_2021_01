@@ -5,7 +5,7 @@
 #include <time.h>
 #include <mpi.h>
 
-#define SLEEP_SEC 1
+#define SLEEP_SEC .001
 #define FILEPATH "data/file.txt"
 #define FILEPATHTEMP "data/file.tmp"
 #define MAX_LINHAS 10
@@ -132,27 +132,30 @@ void substituirLinha(int line, char * text) {
 }
 
 char * getRandomMsg() {
-    int r = (rand() % 8) + 1;
+    int r = (rand() % 20) + 1;
 
     switch (r) {
-        case 1:
-            return "Gostaria de dizer que te acho legal demais.";
-        case 2: 
-            return "Vamos sair para beber a noite?";
-        case 3:
-            return "O chefe é um mala.";
-        case 4: 
-            return "Obrigado por me auxiliar.";
-        case 5:
-            return "Vamos conversar?";
-        case 6: 
-            return "Vishhhh fiz uma cagada.";
-        case 7:
-            return "Sabia que o joão caiu no chão.";
-        case 8: 
-            return "UUUUUUUUUuaaaaaahhhhh, yeah!.";
-        default:
-            return "Eita nóis";
+        case 1: return "Gostaria de dizer que te acho legal demais.";
+        case 2: return "Vamos sair para beber a noite?";
+        case 3: return "O chefe é um mala.";
+        case 4: return "Obrigado por me auxiliar.";
+        case 5: return "Vamos conversar?";
+        case 6: return "Vishhhh fiz uma cagada.";
+        case 7: return "Sabia que o joão caiu no chão.";
+        case 8: return "UUUUUUUUUuaaaaaahhhhh, yeah!.";
+        case 9: return "De ladrão já basta o governo, trabalhe!";
+        case 10: return "A vida é curta demais para tomar cafés frios.";
+        case 11: return "Se o videogame atrapalha os estudos, pare de estudar.";
+        case 12: return "Se chamam bicicleta de bike, por que não chamam motocicleta de mike?";
+        case 13: return "Os seus segredos estão seguros comigo. Eu não estava nem escutando.";
+        case 14: return "Três palavras que me resumem: tô com fome!";
+        case 15: return "Tem coisas nessa vida que eu apenas visualizo e não respondo.";
+        case 16: return "Fácil é fazer miojo... Viver é complicado!";
+        case 17: return "Precisamos inventar um dia novo entre sábado e domingo.";
+        case 18: return "Quem inventou o trabalho não tinha o que fazer.";
+        case 19: return "Hoje estou muito ocupado... Fazendo vários nadas.";
+        case 20: return "Desculpa o meu atraso, é que eu não queria vir.";
+        default: return "Eita nóis";
 
     }   
 }
