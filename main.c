@@ -1,3 +1,5 @@
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +46,8 @@ void print3(int proc, int step, char * msg) {
 }
 
 void criarArquivo() {
+    int result = mkdir("data", 0777);
+
     FILE *file;
     file = fopen(FILEPATH, "w");
 
