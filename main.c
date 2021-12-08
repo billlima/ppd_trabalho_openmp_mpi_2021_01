@@ -5,7 +5,7 @@
 #include <time.h>
 #include <mpi.h>
 
-#define SLEEP_SEC .001
+#define SLEEP_SEC 1
 #define FILEPATH "data/file.txt"
 #define FILEPATHTEMP "data/file.tmp"
 #define MAX_LINHAS 10
