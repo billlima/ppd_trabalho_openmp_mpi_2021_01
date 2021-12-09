@@ -7,7 +7,7 @@
 #include <time.h>
 #include <mpi.h>
 
-#define SLEEP_SEC .2
+#define SLEEP_SEC .5
 #define FILEPATH "data/file.txt"
 #define FILEPATHTEMP "data/file.tmp"
 #define MAX_LINHAS 10
@@ -244,7 +244,7 @@ struct Comunicacao getOperacaoProcesso(int processoAtual, int step, int size, st
         printf("[step %d][proc %d] Quero enviar mensagem para %d\n", step, processoAtual, _com.aux); 
     } 
 
-    else if (editandoLinha->linha == 0 && rand() % 10 == 1) {
+    else if (editandoLinha->linha == 0 && rand() % 10 == 1) { //Uma chance em 10
         int linha = getRandomLine();
         _com.op = OP_EDITAR_LINHA;
         _com.aux = linha;
@@ -252,12 +252,11 @@ struct Comunicacao getOperacaoProcesso(int processoAtual, int step, int size, st
     }
 
     else if (editandoLinha->linha != 0 && editandoLinha->stepInicio < (step - 8)) {
-        if (rand() % 2 == 1) {
+        if (rand() % 2 == 1) { //Uma chance em 2
             _com.op = OP_EDICAO_LINHA_CONCLUIDA;
             _com.aux = editandoLinha->linha;
 
             editandoLinha->linha = 0;
-            editandoLinha->stepInicio = 0;
         }
     }
 
@@ -299,24 +298,19 @@ int main(int argc, char **argv)
     editandoLinha = malloc(sizeof(struct EdicaoLinha));
 
     editandoLinha->linha = 0;
-    editandoLinha->stepInicio = 0;
 
-    int emEdicaoArr[MAX_LINHAS] = {0};
+    int emEdicaoArr[MAX_LINHAS] = {0}; //idx: linha, value: processo que está editando
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD); //Sincronize
     
     for (;;) {
 
-        solicitacao[0] = 0;
-        solicitacao[1] = 0;
+        solicitacao[0] = OP_NADA;
+        solicitacao[1] = rank;
         solicitacao[2] = 0;
 
         if (step > 1) {
             // print3(rank, step, "");
-
-            solicitacao[0] = OP_NADA;
-            solicitacao[1] = rank;
-            solicitacao[2] = 0;
 
             if (rank != ROOT) {
                 
@@ -326,7 +320,7 @@ int main(int argc, char **argv)
                 
             }
 
-            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Barrier(MPI_COMM_WORLD); //Sincronize
 
             MPI_Gather(solicitacao, 3, MPI_INT, solicitacoes, 3, MPI_INT, ROOT, MPI_COMM_WORLD);
 
@@ -377,7 +371,7 @@ int main(int argc, char **argv)
                 }
             }
 
-            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Barrier(MPI_COMM_WORLD); //Sincronize
 
             MPI_Bcast(respostas, respostasSize, MPI_INT, ROOT, MPI_COMM_WORLD);
         
@@ -433,7 +427,7 @@ int main(int argc, char **argv)
             }
         } 
 
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD); //Sincronize
 
         if (rank == ROOT) {
             limparRespostas(respostas, respostasSize);
