@@ -7,7 +7,7 @@
 #include <time.h>
 #include <mpi.h>
 
-#define SLEEP_SEC 1
+#define SLEEP_SEC .2
 #define FILEPATH "data/file.txt"
 #define FILEPATHTEMP "data/file.tmp"
 #define MAX_LINHAS 10
@@ -18,16 +18,15 @@
 
 
 // Operacoes
-#define OP_NADA 0
+#define OP_NADA 0                       // (proc <==> root)
 // Envio de mensagem
-#define OP_ENVIAR_MSG 1                 // > solicitação para enviar mensagem [para:aux]
-#define OP_ENVIAR_MSG_CONCEDIDA 2       // < solicitação para envio mensagem CONCEDIDA (enviar ponto a ponto)
-#define OP_ENVIAR_MSG_NEGADA 3          // < solicitação para envio mensagem NEGADA (enviar ponto a ponto)
+#define OP_ENVIAR_MSG 1                 // (proc ==> root) solicitação para enviar mensagem [para:aux]
+#define OP_ENVIAR_MSG_CONCEDIDA 2       // (proc <== root) solicitação para envio mensagem CONCEDIDA (enviar ponto a ponto)
 // Edição de linha
-#define OP_EDITAR_LINHA 4               // > solicitação editar [linha:aux]
-#define OP_EDITAR_LINHA_CONCEDIDA 5     // < solicitação para editar linha CONCEDIDA
-#define OP_EDITAR_LINHA_NEGADA 6        // < solicitação para editar linha NEGADA
-#define OP_EDICAO_LINHA_CONCLUIDA 7     // > concluir alteração de linha
+#define OP_EDITAR_LINHA 3               // (proc ==> root) solicitação editar [linha:aux]
+#define OP_EDITAR_LINHA_CONCEDIDA 4     // (proc <== root) solicitação para editar linha CONCEDIDA
+#define OP_EDITAR_LINHA_NEGADA 5        // (proc <== root) solicitação para editar linha NEGADA
+#define OP_EDICAO_LINHA_CONCLUIDA 6     // (proc|root <==> proc|root) concluir alteração de linha
 
 struct EdicaoLinha{
     int linha;
@@ -129,7 +128,6 @@ void substituirLinha(int line, char * text) {
     fclose(fTemp);
 
     remove(FILEPATH);
-
     rename(FILEPATHTEMP, FILEPATH);
 
     printf("Linha %d atualizada\n", line);
@@ -425,12 +423,10 @@ int main(int argc, char **argv)
                             // imprimirArquivo();
                         }
 
-                    }
-
-                    if (rank == ROOT && _resp.op == OP_EDICAO_LINHA_CONCLUIDA) {
+                    } else if (_resp.op == OP_EDICAO_LINHA_CONCLUIDA) {
                         receberLinhaSubstituicao(rank, step, _resp.de, _resp.aux, status);
                         imprimirArquivo();
-                    } 
+                    }
 
                 }
             
