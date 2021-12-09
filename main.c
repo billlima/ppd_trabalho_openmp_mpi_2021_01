@@ -34,10 +34,10 @@ struct EdicaoLinha{
 };
 
 struct Comunicacao{
-    int op;
-    int de;
-    int aux;
-    char msg[MAX_TAM_MSG];
+    int op; //Operação
+    int de; //Processo que originou a solicitação
+    int aux; //Linha que deseja atualizar ou processo que deve receber mensagem ponto-a-ponto
+    char msg[MAX_TAM_MSG]; //Mensagem em comunicaçoes ponto-a-ponto
 };
 
 void print3(int proc, int step, char * msg) {
